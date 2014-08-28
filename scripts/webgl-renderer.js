@@ -1,8 +1,9 @@
-define(['glmatrix'], function(GLMatrix) {
+define(['glmatrix', 'lib/matrixStack'], function(GLMatrix, MatrixStack) {
 	var webGLRenderer = function(canvas, shaders) {
 		this._canvas = canvas;
 		this._shaders = shaders;
 		this._camera = null;
+		this._matrixStack = new MatrixStack();
 		this._initGL();
 		this._shaderProgram = this._initShaderProgram();
 	};
@@ -28,24 +29,51 @@ define(['glmatrix'], function(GLMatrix) {
 		}
 	};
 	
+	webGLRenderer.prototype.renderComplex = function(complex) {
+		var mvMatrix;
+		if (!this._matrixStack.isPopable()) {
+			// Model-view matrix
+			mvMatrix = mat4.create();
+			mat4.identity(mvMatrix);
+			// Push
+			this._matrixStack.push(mvMatrix);
+		}
+		
+		mvMatrix = this._matrixStack.pop();
+		
+		// Apply complex transformation
+		mat4.multiply(complex.getTransformation(), mvMatrix, mvMatrix);
+		
+		this._matrixStack.push(mvMatrix);
+		
+		// Render each object
+		var objects = complex.getObjects();
+		var object;
+		for (var oi in objects) {
+			if (objects.hasOwnProperty(oi)) {
+				object = objects[oi];
+				object.render(this);
+			}
+		}
+		
+		this._matrixStack.pop();
+	};
+	
 	webGLRenderer.prototype.renderTriangle = function(triangle) {
-		// Perspective
-		var pMatrix = mat4.create();
-		mat4.perspective(45, this._gl.viewportWidth / this._gl.viewportHeight, 0.1, 100.0, pMatrix);
+		// Apply current model view transformation
+		var mvMatrix = this._matrixStack.pop();
+		this._matrixStack.push(mvMatrix);
 		
-		// Model-view matrix
-		var mvMatrix = mat4.create();
-		mat4.identity(mvMatrix);
-		
-		// Apply triangle transformation
-		mat4.multiply(triangle.getTransformation(), mvMatrix, mvMatrix);
-		
-		// Apply camera transformation
+		// Apply camera transformation before actually rendering
 		if (!this._camera) {
 			throw "No camera set :-(";
 		}
 		
 		mat4.multiply(this._camera.getTransformation(), mvMatrix, mvMatrix);
+		
+		// Perspective
+		var pMatrix = mat4.create();
+		mat4.perspective(45, this._gl.viewportWidth / this._gl.viewportHeight, 0.1, 100.0, pMatrix);
 		
 		// Pass in  matrixes to shaders
 		this._gl.uniformMatrix4fv(this._shaderProgram.pMatrixUniform, false, pMatrix);
@@ -95,6 +123,7 @@ define(['glmatrix'], function(GLMatrix) {
 			this._gl = canvas.getContext("experimental-webgl");
 			this._gl.viewportWidth = canvas.width;
 			this._gl.viewportHeight = canvas.height;
+			this._gl.enable(this._gl.DEPTH_TEST);
 			
 		} catch(e) { }
 		

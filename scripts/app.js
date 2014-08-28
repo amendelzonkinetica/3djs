@@ -1,4 +1,4 @@
-define(['jquery', 'webgl-renderer', 'scenes/scene', 'scenes/triangle', 'scenes/camera'], function($, WebGLRenderer, Scene, Triangle, Camera) {
+define(['jquery', 'webgl-renderer', 'scenes/scene', 'scenes/complex', 'scenes/triangle', 'scenes/camera'], function($, WebGLRenderer, Scene, Complex, Triangle, Camera) {
 	var app = function() {
 	};
 	
@@ -8,16 +8,50 @@ define(['jquery', 'webgl-renderer', 'scenes/scene', 'scenes/triangle', 'scenes/c
 			// The web gl renderer
 			self._renderer = new WebGLRenderer('main', { vertex: 'main-shader-vertex', fragment: 'main-shader-fragment' });
 			
-			// The triangle
-			self._triangle = new Triangle([
+			// The triangles
+			var t1 = new Triangle([
 				[0.0, 1.0, 0.0],
 				[-1.0, -1.0, 0.0],
 				[1.0, -1.0, 0.0]
 			], [
-				[1.0, 0.0, 0.0, 1.0],
-				[1.0, 1.0, 0.0, 1.0],
-				[1.0, 0.0, 1.0, 1.0]
+				[0.5, 0.0, 0.0, 1.0],
+				[0.5, 0.0, 0.0, 1.0],
+				[0.5, 0.0, 0.0, 1.0]
 			]);
+			var t2 = new Triangle([
+				[0.0, 1.0, 0.0],
+				[-1.0, -1.0, 0.0],
+				[0.0, -1.0, -1.0]
+			], [
+				[0.0, 0.5, 0.0, 1.0],
+				[0.0, 0.5, 0.0, 1.0],
+				[0.0, 0.5, 0.0, 1.0]
+			]);
+			var t3 = new Triangle([
+				[0.0, 1.0, 0.0],
+				[0.0, -1.0, -1.0],
+				[1.0, -1.0, 0.0]
+			], [
+				[0.0, 0.0, 0.5, 1.0],
+				[0.0, 0.0, 0.5, 1.0],
+				[0.0, 0.0, 0.5, 1.0]
+			]);
+			var t4 = new Triangle([
+				[-1.0, -1.0, 0.0],
+				[1.0, -1.0, 0.0],
+				[0.0, -1.0, -1.0]
+			], [
+				[0.5, 0.5, 0.0, 1.0],
+				[0.5, 0.5, 0.0, 1.0],
+				[0.5, 0.5, 0.0, 1.0]
+			]);
+			
+			// The complex object
+			self._complex = new Complex();
+			self._complex.add(t1);
+			self._complex.add(t2);
+			self._complex.add(t3);
+			self._complex.add(t4);
 			
 			// The camera
 			var camera = new Camera();
@@ -26,7 +60,7 @@ define(['jquery', 'webgl-renderer', 'scenes/scene', 'scenes/triangle', 'scenes/c
 			
 			// The scene
 			self._scene = new Scene();
-			self._scene.add(self._triangle);
+			self._scene.add(self._complex);
 			
 			// Render!
 			self._scene.render(self._renderer);
@@ -66,8 +100,8 @@ define(['jquery', 'webgl-renderer', 'scenes/scene', 'scenes/triangle', 'scenes/c
 			var percentX = deltaX / this._totalX * this._dragScale;
 			var percentY = deltaY / this._totalY * this._dragScale;
 			// Rooootation!
-			this._triangle.rotate(2.0 * Math.PI * percentX, [0, 1, 0]);
-			this._triangle.rotate(2.0 * Math.PI * percentY, [1, 0, 0]);
+			this._complex.rotate(2.0 * Math.PI * percentX, [0, 1, 0]);
+			this._complex.rotate(2.0 * Math.PI * percentY, [1, 0, 0]);
 			// Rendering!
 			this._scene.render(this._renderer);
 		}
