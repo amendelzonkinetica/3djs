@@ -1,35 +1,70 @@
 define(['glmatrix'], function(GLMatrix) {
-	var webGLDrawer = function(canvas, shaders) {
+	var webGLRenderer = function(canvas, shaders) {
 		this._canvas = canvas;
 		this._shaders = shaders;
+		this._camera = null;
 		this._initGL();
 		this._shaderProgram = this._initShaderProgram();
 	};
 	
-	webGLDrawer.prototype.draw = function(scene) {
-		// Scene-drawing routine
-		
+	webGLRenderer.prototype.setCamera = function(camera) {
+		this._camera = camera;
+	};
+	
+	webGLRenderer.prototype.renderScene = function(scene) {
+		// Scene-rendering routine
 		this._gl.viewport(0, 0, this._gl.viewportWidth, this._gl.viewportHeight);
 		this._gl.clearColor(0.0, 0.0, 0.0, 1.0);
 		this._gl.clear(this._gl.COLOR_BUFFER_BIT | this._gl.DEPTH_BUFFER_BIT);
 		
+		// Render each object
+		var objects = scene.getObjects();
+		var object;
+		for (var oi in objects) {
+			if (objects.hasOwnProperty(oi)) {
+				object = objects[oi];
+				object.render(this);
+			}
+		}
+	};
+	
+	webGLRenderer.prototype.renderTriangle = function(triangle) {
+		// Perspective
 		var pMatrix = mat4.create();
 		mat4.perspective(45, this._gl.viewportWidth / this._gl.viewportHeight, 0.1, 100.0, pMatrix);
+		
+		// Model-view matrix
 		var mvMatrix = mat4.create();
 		mat4.identity(mvMatrix);
-		mat4.translate(mvMatrix, [0.0, 0.0, -7.0]);
+		
+		// Apply triangle transformation
+		mat4.multiply(triangle.getTransformation(), mvMatrix, mvMatrix);
+		
+		// Apply camera transformation
+		if (!this._camera) {
+			throw "No camera set :-(";
+		}
+		
+		mat4.multiply(this._camera.getTransformation(), mvMatrix, mvMatrix);
+		
+		// Pass in  matrixes to shaders
 		this._gl.uniformMatrix4fv(this._shaderProgram.pMatrixUniform, false, pMatrix);
 		this._gl.uniformMatrix4fv(this._shaderProgram.mvMatrixUniform, false, mvMatrix);
 		
+		// Vertexes
+		var v = triangle.getVertexes();
 		var triangleVertexPositionBuffer = this._createVertexPositionBuffer([
-			0.0,  1.0,  0.0,
-            -1.0, -1.0,  0.0,
-            1.0, -1.0,  0.0
+			v[0][0], v[0][1], v[0][2],
+            v[1][0], v[1][1], v[1][2],
+			v[2][0], v[2][1], v[2][2]
 		]);
+		
+		// Colors
+		var c = triangle.getColors();
 		var triangleVertexColorBuffer = this._createVertexColorBuffer([
-			1.0,  0.0,  0.0, 1.0,
-            1.0,  1.0,  0.0, 1.0,
-            1.0,  0.0,  1.0, 1.0,
+			c[0][0], c[0][1], c[0][2], c[0][3],
+            c[1][0], c[1][1], c[1][2], c[1][3],
+			c[2][0], c[2][1], c[2][2], c[2][3]
 		]);
 		this._gl.bindBuffer(this._gl.ARRAY_BUFFER, triangleVertexPositionBuffer);
 		this._gl.vertexAttribPointer(this._shaderProgram.vertexPositionAttribute, triangleVertexPositionBuffer.itemSize, this._gl.FLOAT, false, 0, 0);
@@ -38,11 +73,11 @@ define(['glmatrix'], function(GLMatrix) {
 		this._gl.drawArrays(this._gl.TRIANGLES, 0, triangleVertexPositionBuffer.numItems);
 	};
 	
-	webGLDrawer.prototype._createVertexPositionBuffer = function(values) { return this._createBuffer(values, 3); };
+	webGLRenderer.prototype._createVertexPositionBuffer = function(values) { return this._createBuffer(values, 3); };
 	
-	webGLDrawer.prototype._createVertexColorBuffer = function(values) { return this._createBuffer(values, 4); };
+	webGLRenderer.prototype._createVertexColorBuffer = function(values) { return this._createBuffer(values, 4); };
 	
-	webGLDrawer.prototype._createBuffer = function(values, itemSize) {
+	webGLRenderer.prototype._createBuffer = function(values, itemSize) {
 		var result = this._gl.createBuffer();
 		this._gl.bindBuffer(this._gl.ARRAY_BUFFER, result);
 		this._gl.bufferData(this._gl.ARRAY_BUFFER, new Float32Array(values), this._gl.STATIC_DRAW);
@@ -51,7 +86,7 @@ define(['glmatrix'], function(GLMatrix) {
 		return result;
 	};
 	
-	webGLDrawer.prototype._initGL = function() {
+	webGLRenderer.prototype._initGL = function() {
 		try {
 			var canvas = document.getElementById(this._canvas);
 			if (!canvas) {
@@ -68,7 +103,7 @@ define(['glmatrix'], function(GLMatrix) {
 		}
 	};
 	
-	webGLDrawer.prototype._initShaderProgram = function() {
+	webGLRenderer.prototype._initShaderProgram = function() {
 		var fragmentShader = this._getShader(this._shaders.fragment);
 		var vertexShader = this._getShader(this._shaders.vertex);
 
@@ -95,7 +130,7 @@ define(['glmatrix'], function(GLMatrix) {
 		return shaderProgram;
 	};
 	
-	webGLDrawer.prototype._getShader = function(which) {
+	webGLRenderer.prototype._getShader = function(which) {
 		var shaderScript = document.getElementById(which);
 		if (!shaderScript) {
 			throw "Invalid shader specified: '" + which + "' :-(";
@@ -129,5 +164,5 @@ define(['glmatrix'], function(GLMatrix) {
 		return shader;
 	};
 	
-	return webGLDrawer;
+	return webGLRenderer;
 });
