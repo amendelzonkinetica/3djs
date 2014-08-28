@@ -42,5 +42,9 @@ define(['glmatrix'], function(GLMatrix) {
 		mat4.multiply(scalation, this._transformation, this._transformation);
 	};
 	
+	complex.prototype.reset = function() {
+		mat4.identity(this._transformation);
+	};
+	
 	return complex;
 });
