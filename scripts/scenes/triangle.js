@@ -23,11 +23,11 @@ define(['glmatrix', 'lib/matrixStack'], function(GLMatrix, MatrixStack) {
 		renderer.renderTriangle(this);
 	};
 	
-	triangle.prototype.rotate = function(x, y, z) {
+	triangle.prototype.rotate = function(angle, axis) {
 		this._transformationStack.push(this._transformation);
 		var rotation = mat4.create();
 		mat4.identity(rotation);
-		mat4.rotate(rotation, [x, y, z]);
+		mat4.rotate(rotation, angle, axis);
 		mat4.multiply(rotation, this._transformation, this._transformation);
 	};
 	

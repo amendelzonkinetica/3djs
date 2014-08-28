@@ -9,11 +9,11 @@ define(['glmatrix', 'lib/matrixStack'], function(GLMatrix, MatrixStack) {
 		return this._transformation;
 	};
 	
-	camera.prototype.rotate = function(x, y, z) {
+	camera.prototype.rotate = function(angle, axis) {
 		this._transformationStack.push(this._transformation);
 		var rotation = mat4.create();
 		mat4.identity(rotation);
-		mat4.rotate(rotation, [-x, -y, -z]);
+		mat4.rotate(rotation, angle, [-axis[0], -axis[1], -axis[2]]);
 		mat4.multiply(rotation, this._transformation, this._transformation);
 	};
 	
