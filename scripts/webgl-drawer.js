@@ -24,19 +24,30 @@ define(['glmatrix'], function(GLMatrix) {
 		var triangleVertexPositionBuffer = this._createVertexPositionBuffer([
 			0.0,  1.0,  0.0,
             -1.0, -1.0,  0.0,
-             1.0, -1.0,  0.0
+            1.0, -1.0,  0.0
+		]);
+		var triangleVertexColorBuffer = this._createVertexColorBuffer([
+			1.0,  0.0,  0.0, 1.0,
+            1.0,  1.0,  0.0, 1.0,
+            1.0,  0.0,  1.0, 1.0,
 		]);
 		this._gl.bindBuffer(this._gl.ARRAY_BUFFER, triangleVertexPositionBuffer);
 		this._gl.vertexAttribPointer(this._shaderProgram.vertexPositionAttribute, triangleVertexPositionBuffer.itemSize, this._gl.FLOAT, false, 0, 0);
+		this._gl.bindBuffer(this._gl.ARRAY_BUFFER, triangleVertexColorBuffer);
+		this._gl.vertexAttribPointer(this._shaderProgram.vertexColorAttribute, triangleVertexColorBuffer.itemSize, this._gl.FLOAT, false, 0, 0);
 		this._gl.drawArrays(this._gl.TRIANGLES, 0, triangleVertexPositionBuffer.numItems);
 	};
 	
-	webGLDrawer.prototype._createVertexPositionBuffer = function(values) {
+	webGLDrawer.prototype._createVertexPositionBuffer = function(values) { return this._createBuffer(values, 3); };
+	
+	webGLDrawer.prototype._createVertexColorBuffer = function(values) { return this._createBuffer(values, 4); };
+	
+	webGLDrawer.prototype._createBuffer = function(values, itemSize) {
 		var result = this._gl.createBuffer();
 		this._gl.bindBuffer(this._gl.ARRAY_BUFFER, result);
 		this._gl.bufferData(this._gl.ARRAY_BUFFER, new Float32Array(values), this._gl.STATIC_DRAW);
-		result.itemSize = 3;
-		result.numItems = values.length / result.itemSize;
+		result.itemSize = itemSize;
+		result.numItems = values.length / itemSize;
 		return result;
 	};
 	
@@ -74,6 +85,9 @@ define(['glmatrix'], function(GLMatrix) {
 		
 		shaderProgram.vertexPositionAttribute = this._gl.getAttribLocation(shaderProgram, "aVertexPosition");
 		this._gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+		
+		shaderProgram.vertexColorAttribute = this._gl.getAttribLocation(shaderProgram, "aVertexColor");
+		this._gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
 		
 		shaderProgram.pMatrixUniform = this._gl.getUniformLocation(shaderProgram, "uPMatrix");
 		shaderProgram.mvMatrixUniform = this._gl.getUniformLocation(shaderProgram, "uMVMatrix");
