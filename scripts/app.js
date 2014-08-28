@@ -1,9 +1,10 @@
-define([], function() {
+define(['webgl-drawer'], function(WebGLDrawer) {
 	var app = function() {
 	};
 	
 	app.prototype.run = function() {
-		alert('Hello, world!');
+		var drawer = new WebGLDrawer('main', { vertex: 'main-shader-vertex', fragment: 'main-shader-fragment' });
+		drawer.draw({});
 	};
 	
 	return app;
